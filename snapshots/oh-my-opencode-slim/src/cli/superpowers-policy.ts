@@ -27,16 +27,16 @@ const AGENT_ALLOWED_SUPERPOWERS: Record<string, string[]> = {
     'test-driven-development',
     'systematic-debugging',
     'verification-before-completion',
+    'receiving-code-review',
   ],
   designer: [
     'test-driven-development',
     'systematic-debugging',
     'verification-before-completion',
+    'receiving-code-review',
   ],
   oracle: [
     'systematic-debugging',
-    'verification-before-completion',
-    'receiving-code-review',
   ],
   explorer: [],
   librarian: [],

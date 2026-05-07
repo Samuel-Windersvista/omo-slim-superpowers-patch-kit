@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-05-05 — v1.4.0
+
+### Added
+- Closed-set restricted-MCP blacklist (`src/config/agent-mcp-blacklist.ts`). `windows-mcp`, `chrome-devtools`, `playwright` are now auto-denied for non-operator agents. Future restricted MCPs require only a single line addition.
+- Reserved orchestrator-only skill mechanism (`src/config/orchestrator-only-skills.ts`). `best-of-n-with-judge` and `update-memory` (placeholder) are now exclusive to `orchestrator` and `orchestrator-beta`.
+- Per-agent tier policy (`src/cli/agent-tier-policy.ts`). Tier-3 read-only agents default to `* deny` for non-SP skills; tier-1/2 default to `* allow`.
+- Tool deny rules in base agent factories (oracle/explorer/librarian/observer read-only; council denies edit/write/bash/todowrite but keeps task for councillor dispatch; fixer/designer deny task only).
+
+### Changed
+- Oracle Superpowers allowlist tightened to `systematic-debugging` only. Removed `verification-before-completion` (mismatched: oracle reviews, doesn't claim completion) and `receiving-code-review` (mismatched: oracle gives reviews, doesn't receive them).
+- `receiving-code-review` added to `fixer` and `designer` (the actual receivers of code review).
+- `simplify` custom skill moved from `oracle` to `fixer` (oracle is read-only post-redesign and cannot land changes).
+- Tier-3 markdown agents (oracle*, explorer*, librarian*, scout, validator, gist, wildcard) now deny `write` and `todowrite` in addition to `edit`/`bash`/`task`.
+
+### Removed
+- Redundant `windows-mcp`/`chrome-devtools`/`playwright` listings in operator-class jsonc agent `mcps:` arrays. The closed-set blacklist now handles these implicitly.
+
+### Fixed
+- Agent-config merge in `src/index.ts` was previously a shallow merge (`{...pluginAgent, ...existing}`) at the agent level, which dropped the plugin-emitted `permission.skill` map for any agent that had a user markdown file with its own `permission:` block. Reserved-skill enforcement therefore silently broke on every variant agent (`*-alpha/beta/gamma/delta`) and every utility agent (`scout`, `validator`, `gist`, `wildcard`). Fixed by introducing `src/utils/merge-agent-config.ts` which deep-merges `permission` and `permission.skill` while keeping all other fields shallow-merged. Verified with a 7-test unit suite plus a live smoke probe where `wildcard` correctly denies `update-memory` after the fix.
+
+### Internal
+- Spec: `docs/specs/2026-05-05-permission-redesign.md`
+- Plan: `docs/plans/2026-05-05-omo-permission-redesign.md`
+
 ## 2026-05-05 — v1.3.0
 
 - Added **Anthropic-aware cooldown tracking** (patch `0005-anthropic-cooldown-tracking.patch`):

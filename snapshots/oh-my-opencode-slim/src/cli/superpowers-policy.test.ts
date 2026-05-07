@@ -7,22 +7,48 @@ import {
 } from './superpowers-policy';
 
 describe('superpowers policy', () => {
-  it('grants only implementer-discipline skills to fixer', () => {
-    const allowed = [...getAllowedSuperpowersSkillsForAgent('fixer', FALLBACK_SUPERPOWERS_SKILLS)].sort();
+  it('fixer gets TDD + DBG + VBC + RCR (4 skills, RCR added)', () => {
+    const allowed = getAllowedSuperpowersSkillsForAgent('fixer');
 
-    expect(allowed).toEqual([
-      'systematic-debugging',
-      'test-driven-development',
-      'verification-before-completion',
-    ]);
+    expect(allowed.has('test-driven-development')).toBe(true);
+    expect(allowed.has('systematic-debugging')).toBe(true);
+    expect(allowed.has('verification-before-completion')).toBe(true);
+    expect(allowed.has('receiving-code-review')).toBe(true);
+    expect(allowed.size).toBe(4);
   });
 
-  it('grants reviewer skills to oracle and hides controller skills', () => {
+  it('designer gets TDD + DBG + VBC + RCR (4 skills, RCR added)', () => {
+    const allowed = getAllowedSuperpowersSkillsForAgent('designer');
+
+    expect(allowed.has('test-driven-development')).toBe(true);
+    expect(allowed.has('systematic-debugging')).toBe(true);
+    expect(allowed.has('verification-before-completion')).toBe(true);
+    expect(allowed.has('receiving-code-review')).toBe(true);
+    expect(allowed.size).toBe(4);
+  });
+
+  it('oracle gets only systematic-debugging in SP allowlist', () => {
+    const allowed = getAllowedSuperpowersSkillsForAgent('oracle');
+
+    expect(allowed.has('systematic-debugging')).toBe(true);
+    expect(allowed.has('verification-before-completion')).toBe(false);
+    expect(allowed.has('receiving-code-review')).toBe(false);
+    expect(allowed.size).toBe(1);
+  });
+
+  it('oracle-alpha inherits oracle (DBG only)', () => {
+    const allowed = getAllowedSuperpowersSkillsForAgent('oracle-alpha');
+
+    expect(allowed.has('systematic-debugging')).toBe(true);
+    expect(allowed.size).toBe(1);
+  });
+
+  it('grants only systematic-debugging to oracle and hides controller skills', () => {
     const permissions = buildSuperpowersSkillPermissions('oracle', FALLBACK_SUPERPOWERS_SKILLS);
 
     expect(permissions['systematic-debugging']).toBe('allow');
-    expect(permissions['verification-before-completion']).toBe('allow');
-    expect(permissions['receiving-code-review']).toBe('allow');
+    expect(permissions['verification-before-completion']).toBe('deny');
+    expect(permissions['receiving-code-review']).toBe('deny');
     expect(permissions['writing-plans']).toBe('deny');
     expect(permissions['subagent-driven-development']).toBe('deny');
   });

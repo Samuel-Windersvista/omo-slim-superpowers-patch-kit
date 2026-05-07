@@ -26,16 +26,16 @@
   - `subagent-driven-development`
 
 - `@oracle` can access:
-  - `receiving-code-review`
   - `systematic-debugging`
-  - `verification-before-completion`
 - `@oracle` cannot access:
+  - `receiving-code-review`
+  - `verification-before-completion`
   - `writing-plans`
   - `subagent-driven-development`
 
 - concrete allow probe: `@fixer use verification-before-completion and tell me what must be checked before claiming done`
 - concrete block probe: `@fixer use writing-plans to draft a plan for this repo`
-- concrete allow probe: `@oracle use receiving-code-review to review a small patch`
+- concrete allow probe: `@oracle use systematic-debugging to investigate a suspected bug`
 - concrete block probe: `@oracle use subagent-driven-development to delegate implementation`
 - optional custom-skill probe (only if you have your own non-Superpowers custom skill installed): `@fixer use my non-Superpowers custom skill <your-skill-name> and report whether it is still available in this lane`
 
@@ -47,6 +47,32 @@
 - optional custom-MCP probe (only if you have your own custom MCP configured): `@fixer use my custom MCP <name> to run its normal check`
 - concrete block probe: `@fixer use the OMO-managed websearch MCP to look up release notes`
 - concrete block probe: `@oracle use the OMO-managed websearch MCP to research an issue`
+
+## Permission posture verification (post v1.4.0)
+
+After applying v1.4.0 patches, the following checks should pass:
+
+```text
+# Oracle has no bash
+@oracle "run 'echo hello' via bash"
+# Expected: oracle reports it cannot use bash
+
+# Wildcard has * deny on non-SP skills
+@wildcard "use simplify skill"
+# Expected: wildcard reports skill not available
+
+# Reserved skill orchestrator-only
+@fixer "use best-of-n-with-judge"
+# Expected: fixer reports skill not available
+
+# Operator MCP availability
+@fixer "use windows-mcp to read the current username or list the current directory"
+# Expected: fixer can use windows-mcp (operator class)
+
+# Non-operator MCP denial
+@oracle "use chrome-devtools to inspect a page"
+# Expected: oracle reports tool not available
+```
 
 ## Workflow checks
 
@@ -86,7 +112,7 @@ Only run these checks if you installed the `opencode-config/` example setup (pat
 
 - `@fixer-alpha use verification-before-completion to check claims of done` — should ALLOW (inherits from `fixer`)
 - `@fixer-alpha use writing-plans to draft a plan` — should DENY (not in `fixer` allowed list)
-- `@oracle-beta use receiving-code-review to review a small patch` — should ALLOW (inherits from `oracle`)
+- `@oracle-beta use systematic-debugging to investigate a suspected bug` — should ALLOW (inherits from `oracle`)
 - `@oracle-delta use subagent-driven-development to delegate work` — should DENY
 - `@validator use verification-before-completion to verify a JSON parse` — should ALLOW (explicit policy entry)
 - `@scout use systematic-debugging to investigate a flaky test` — should DENY (empty allowed list)

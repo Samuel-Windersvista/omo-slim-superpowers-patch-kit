@@ -30,7 +30,7 @@ Nearby newer versions will likely still work, but if patch application fails or 
 
 ## What this kit patches
 
-This patch kit changes OMO Slim in five ways:
+This patch kit changes OMO Slim in six ways:
 
 1. **Superpowers-only skill gating** (patch 0001)
    - OMO Slim only selectively restricts `superpowers` skills
@@ -63,6 +63,13 @@ This patch kit changes OMO Slim in five ways:
    - Pairs with patch 0003's model-array fallback (`agents.<name>.model: [primary, backup]`) to make Anthropic 5-hour rolling quotas effectively transparent to the user
    - The cooldown store is provider/model-id-agnostic — future Anthropic models automatically get the same header parsing without code changes
 
+6. **Agent permission redesign** (patch 0006, v1.4.0)
+   - Tier-3 read-only agents (`oracle*`, `explorer*`, `librarian*`, `observer`, `council`, `councillor`, `scout`, `validator`, `gist`, `wildcard`) now deny `edit`, `write`, `bash`, `task`, `todowrite`. `council` is the explicit exception that keeps `task` for dispatching `councillor`.
+   - Closed-set restricted MCP blacklist (`windows-mcp`, `chrome-devtools`, `playwright`) auto-denied for non-operator agents via `src/config/agent-mcp-blacklist.ts`. Future restricted MCPs require only one new line.
+   - Reserved orchestrator-only skills (`best-of-n-with-judge`, `update-memory`) are exclusive to `orchestrator` and `orchestrator-beta`.
+   - Oracle Superpowers allowlist tightened to `systematic-debugging` only. `receiving-code-review` moved to `fixer` and `designer` (the receivers of code review). `simplify` custom skill moved from `oracle` to `fixer`.
+   - Includes a fix for a pre-existing shallow-merge bug in `src/index.ts` that dropped `permission.skill` for agents with user markdown — see `### Fixed` in CHANGELOG.
+
 It also includes prompt bridge files so OMO Slim agents understand how to behave inside a Superpowers-managed workflow.
 
 This kit patches source, then expects you to build that local checkout before pointing OpenCode at it.
@@ -90,7 +97,7 @@ This is opt-in. The base patch kit (patches 0001 + 0002 + bridges + base agent t
 
 ## Repository layout
 
-- `patches/` — patch files to apply against an upstream local OMO Slim checkout (5 patches: skill gating, MCP gating, best-of-N name resolution, orchestrator prefix matching, Anthropic cooldown tracking)
+- `patches/` — patch files to apply against an upstream local OMO Slim checkout (6 patches: skill gating, MCP gating, best-of-N name resolution, orchestrator prefix matching, Anthropic cooldown tracking, agent permission redesign)
 - `snapshots/` — validated modified source files for manual comparison
 - `config-templates/` — template configs based on the maintainer profile
 - `prompt-bridges/` — per-agent append prompts for Superpowers-aware behavior
@@ -130,6 +137,12 @@ If you applied patch 0005 and configured a model fallback array on any agent (e.
 - After a rate-limit event mid-session, subsequent prompts in the SAME session use the fallback model directly with no wait
 - After restarting OpenCode while a cooldown is still active, the next session starts on the fallback model directly (no 30-second retry storm against the rate-limited primary)
 - After the recorded reset time elapses, future sessions resume on the primary model normally
+
+If you applied patch 0006, also verify:
+- Tier-3 read-only agents deny `edit`, `write`, `bash`, `task`, and `todowrite` (`council` keeps `task` for `councillor` dispatch)
+- Non-operator agents deny restricted MCPs (`windows-mcp`, `chrome-devtools`, `playwright`)
+- Reserved orchestrator-only skills (`best-of-n-with-judge`, `update-memory`) remain exclusive to `orchestrator` and `orchestrator-beta`
+- Agents with user markdown and their own `permission:` block retain plugin-emitted `permission.skill` entries
 
 ## Rollback
 

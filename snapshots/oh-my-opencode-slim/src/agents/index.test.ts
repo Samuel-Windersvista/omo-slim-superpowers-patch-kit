@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { getSkillPermissionsForAgent } from '../cli/skills';
 import type { PluginConfig } from '../config';
 import {
   AgentOverrideConfigSchema,
@@ -118,6 +119,91 @@ describe('fixer agent fallback', () => {
   });
 });
 
+describe('base agent factory tool denies', () => {
+  test('oracle has edit/write/bash/task/todowrite deny', () => {
+    const agents = createAgents();
+    const oracle = agents.find((a) => a.name === 'oracle');
+    expect(oracle).toBeDefined();
+    const perm = (oracle?.config.permission as Record<string, string>) ?? {};
+    expect(perm.edit).toBe('deny');
+    expect(perm.write).toBe('deny');
+    expect(perm.bash).toBe('deny');
+    expect(perm.task).toBe('deny');
+    expect(perm.todowrite).toBe('deny');
+  });
+
+  test('explorer has edit/write/bash/task/todowrite deny', () => {
+    const agents = createAgents();
+    const explorer = agents.find((a) => a.name === 'explorer');
+    expect(explorer).toBeDefined();
+    const perm = (explorer?.config.permission as Record<string, string>) ?? {};
+    expect(perm.edit).toBe('deny');
+    expect(perm.write).toBe('deny');
+    expect(perm.bash).toBe('deny');
+    expect(perm.task).toBe('deny');
+    expect(perm.todowrite).toBe('deny');
+  });
+
+  test('librarian has edit/write/bash/task/todowrite deny', () => {
+    const agents = createAgents();
+    const librarian = agents.find((a) => a.name === 'librarian');
+    expect(librarian).toBeDefined();
+    const perm = (librarian?.config.permission as Record<string, string>) ?? {};
+    expect(perm.edit).toBe('deny');
+    expect(perm.write).toBe('deny');
+    expect(perm.bash).toBe('deny');
+    expect(perm.task).toBe('deny');
+    expect(perm.todowrite).toBe('deny');
+  });
+
+  test('observer has edit/write/bash/task/todowrite deny', () => {
+    const agents = createAgents({ disabled_agents: [] });
+    const observer = agents.find((a) => a.name === 'observer');
+    expect(observer).toBeDefined();
+    const perm = (observer?.config.permission as Record<string, string>) ?? {};
+    expect(perm.edit).toBe('deny');
+    expect(perm.write).toBe('deny');
+    expect(perm.bash).toBe('deny');
+    expect(perm.task).toBe('deny');
+    expect(perm.todowrite).toBe('deny');
+  });
+
+  test('council has edit/write/bash/todowrite deny but task not denied (dispatches councillor)', () => {
+    const agents = createAgents();
+    const council = agents.find((a) => a.name === 'council');
+    expect(council).toBeDefined();
+    const perm = (council?.config.permission as Record<string, string>) ?? {};
+    expect(perm.edit).toBe('deny');
+    expect(perm.write).toBe('deny');
+    expect(perm.bash).toBe('deny');
+    expect(perm.todowrite).toBe('deny');
+    expect(perm.task).not.toBe('deny');
+  });
+
+  test('fixer has task deny (no further delegation)', () => {
+    const agents = createAgents();
+    const fixer = agents.find((a) => a.name === 'fixer');
+    expect(fixer).toBeDefined();
+    const perm = (fixer?.config.permission as Record<string, string>) ?? {};
+    expect(perm.task).toBe('deny');
+    expect(perm.write).not.toBe('deny');
+    expect(perm.edit).not.toBe('deny');
+    expect(perm.bash).not.toBe('deny');
+    expect(perm.todowrite).not.toBe('deny');
+  });
+
+  test('designer has task deny (same shape as fixer)', () => {
+    const agents = createAgents();
+    const designer = agents.find((a) => a.name === 'designer');
+    expect(designer).toBeDefined();
+    const perm = (designer?.config.permission as Record<string, string>) ?? {};
+    expect(perm.task).toBe('deny');
+    expect(perm.write).not.toBe('deny');
+    expect(perm.edit).not.toBe('deny');
+    expect(perm.bash).not.toBe('deny');
+    expect(perm.todowrite).not.toBe('deny');
+  });
+});
 describe('orchestrator agent', () => {
   test('orchestrator is first in agents array', () => {
     const agents = createAgents();
@@ -260,13 +346,32 @@ describe('skill permissions', () => {
     expect(skillPerm?.['requesting-code-review']).toBe('deny');
   });
 
-  test('oracle gets simplify skill allowed by default', () => {
+  test('fixer has simplify skill allowed (moved from oracle)', () => {
+    const agents = createAgents();
+    const fixer = agents.find((a) => a.name === 'fixer');
+    expect(fixer).toBeDefined();
+    const skillPerm = (fixer?.config.permission as Record<string, unknown>)
+      ?.skill as Record<string, string>;
+    expect(skillPerm?.simplify).toBe('allow');
+  });
+
+  test('oracle does NOT have simplify skill allowed (moved to fixer)', () => {
     const agents = createAgents();
     const oracle = agents.find((a) => a.name === 'oracle');
     expect(oracle).toBeDefined();
     const skillPerm = (oracle?.config.permission as Record<string, unknown>)
       ?.skill as Record<string, string>;
-    expect(skillPerm?.simplify).toBe('allow');
+    expect(skillPerm?.simplify).not.toBe('allow');
+  });
+
+  test('fixer-alpha has simplify (variant inherits at skill-resolution layer)', () => {
+    const skillPerm = getSkillPermissionsForAgent('fixer-alpha');
+    expect(skillPerm.simplify).toBe('allow');
+  });
+
+  test('oracle-alpha does NOT have simplify (variant inherits at skill-resolution layer)', () => {
+    const skillPerm = getSkillPermissionsForAgent('oracle-alpha');
+    expect(skillPerm.simplify).not.toBe('allow');
   });
 });
 
@@ -359,7 +464,6 @@ describe('createAgents', () => {
     expect(agents.length).toBe(8);
   });
 });
-
 describe('getAgentConfigs', () => {
   test('returns config record keyed by agent name', () => {
     const configs = getAgentConfigs();
@@ -374,6 +478,102 @@ describe('getAgentConfigs', () => {
     const configs = getAgentConfigs();
     expect(configs.orchestrator.description).toBeDefined();
     expect(configs.explorer.description).toBeDefined();
+  });
+
+  test('adds hidden backup shadow config for anthropic-primary task fallback agents', () => {
+    const configs = getAgentConfigs({
+      agents: {
+        librarian: {
+          model: [
+            {
+              id: 'gauge-forge-anthropic/claude-opus-4-7',
+              variant: 'high',
+            },
+            { id: 'gauge-forge-openai/gpt-5.4', variant: 'xhigh' },
+          ],
+        },
+      },
+    });
+
+    const shadow = configs.librarian__task_fallback;
+    expect(shadow).toBeDefined();
+    expect(shadow.model).toBe('gauge-forge-openai/gpt-5.4');
+    expect(shadow.variant).toBe('xhigh');
+    expect(shadow.hidden).toBe(true);
+    expect(shadow.mode).toBe('primary');
+  });
+
+  test('does not add backup shadow config for non-anthropic primary arrays', () => {
+    const configs = getAgentConfigs({
+      agents: {
+        explorer: {
+          model: [
+            { id: 'gauge-forge-openai/gpt-5.4', variant: 'medium' },
+            {
+              id: 'gauge-forge-anthropic/claude-sonnet-4-6',
+              variant: 'high',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(configs.explorer__task_fallback).toBeUndefined();
+  });
+});
+
+describe('getAgentConfigs — restricted MCP blacklist', () => {
+  test('oracle has windows-mcp_*, chrome-devtools_*, playwright_* denied', () => {
+    const configs = getAgentConfigs();
+    const oraclePerm =
+      (configs.oracle.permission as Record<string, unknown>) ?? {};
+    expect(oraclePerm['windows-mcp_*']).toBe('deny');
+    expect(oraclePerm['chrome-devtools_*']).toBe('deny');
+    expect(oraclePerm['playwright_*']).toBe('deny');
+  });
+
+  test('fixer has no restricted MCP denies (operator)', () => {
+    const configs = getAgentConfigs();
+    const fixerPerm =
+      (configs.fixer.permission as Record<string, unknown>) ?? {};
+    expect(fixerPerm['windows-mcp_*']).toBeUndefined();
+    expect(fixerPerm['chrome-devtools_*']).toBeUndefined();
+    expect(fixerPerm['playwright_*']).toBeUndefined();
+  });
+
+  test('librarian has windows-mcp_* deny but not chrome/playwright (mixed operator)', () => {
+    const configs = getAgentConfigs();
+    const libPerm =
+      (configs.librarian.permission as Record<string, unknown>) ?? {};
+    expect(libPerm['windows-mcp_*']).toBe('deny');
+    expect(libPerm['chrome-devtools_*']).toBeUndefined();
+    expect(libPerm['playwright_*']).toBeUndefined();
+  });
+
+  test('explorer-alpha (variant) inherits explorer denies', () => {
+    const configs = getAgentConfigs({
+      agents: {
+        'explorer-alpha': { model: 'openai/gpt-5.4-mini' },
+      },
+    });
+    const epAlpha =
+      (configs['explorer-alpha']?.permission as Record<string, unknown>) ?? {};
+    expect(epAlpha['windows-mcp_*']).toBe('deny');
+    expect(epAlpha['chrome-devtools_*']).toBe('deny');
+    expect(epAlpha['playwright_*']).toBe('deny');
+  });
+
+  test('wildcard has all 3 restricted MCPs denied', () => {
+    const configs = getAgentConfigs({
+      agents: {
+        wildcard: { model: 'openai/gpt-5.4-mini' },
+      },
+    });
+    const wcPerm =
+      (configs.wildcard?.permission as Record<string, unknown>) ?? {};
+    expect(wcPerm['windows-mcp_*']).toBe('deny');
+    expect(wcPerm['chrome-devtools_*']).toBe('deny');
+    expect(wcPerm['playwright_*']).toBe('deny');
   });
 });
 
@@ -856,5 +1056,61 @@ describe('observer agent', () => {
 
   test('DEFAULT_DISABLED_AGENTS contains observer', () => {
     expect(DEFAULT_DISABLED_AGENTS).toContain('observer');
+  });
+});
+
+describe('permission redesign — spec coverage summary', () => {
+  test('reserved skills are denied on all non-orchestrator agents', () => {
+    const configs = getAgentConfigs();
+    const reservedSkills = ['best-of-n-with-judge', 'update-memory'];
+    const orchestratorAgents = ['orchestrator', 'orchestrator-beta'];
+
+    for (const [agentName, agentConfig] of Object.entries(configs)) {
+      const perm = (agentConfig.permission as Record<string, unknown>) ?? {};
+      const skillPerm = (perm.skill as Record<string, string>) ?? {};
+      for (const reserved of reservedSkills) {
+        if (orchestratorAgents.includes(agentName)) {
+          expect(skillPerm[reserved]).toBe('allow');
+        } else {
+          expect(skillPerm[reserved]).toBe('deny');
+        }
+      }
+    }
+  });
+
+  test('all tier-3 agents have * deny on non-SP skills', () => {
+    const tier3 = [
+      'oracle', 'oracle-alpha', 'oracle-beta', 'oracle-gamma', 'oracle-delta',
+      'explorer', 'explorer-alpha', 'explorer-beta',
+      'librarian', 'librarian-alpha', 'librarian-beta',
+      'observer', 'council', 'councillor',
+      'scout', 'validator', 'gist', 'wildcard',
+    ];
+    for (const name of tier3) {
+      const skillPerm = getSkillPermissionsForAgent(name);
+      expect(skillPerm['*']).toBe('deny');
+    }
+  });
+
+  test('restricted MCP denies partition operators, librarians, and all other agents correctly', () => {
+    const configs = getAgentConfigs();
+    const operatorBases = new Set(['fixer', 'orchestrator', 'laborer', 'designer']);
+    for (const [agentName, agentConfig] of Object.entries(configs)) {
+      const perm = (agentConfig.permission as Record<string, unknown>) ?? {};
+      const base = agentName.split('-')[0];
+      if (operatorBases.has(base)) {
+        expect(perm['windows-mcp_*']).toBeUndefined();
+        expect(perm['chrome-devtools_*']).toBeUndefined();
+        expect(perm['playwright_*']).toBeUndefined();
+      } else if (base === 'librarian') {
+        expect(perm['windows-mcp_*']).toBe('deny');
+        expect(perm['chrome-devtools_*']).toBeUndefined();
+        expect(perm['playwright_*']).toBeUndefined();
+      } else {
+        expect(perm['windows-mcp_*']).toBe('deny');
+        expect(perm['chrome-devtools_*']).toBe('deny');
+        expect(perm['playwright_*']).toBe('deny');
+      }
+    }
   });
 });

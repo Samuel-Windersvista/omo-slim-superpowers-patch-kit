@@ -1,4 +1,9 @@
 import { spawnSync } from 'node:child_process';
+import {
+  isReservedSkillAllowed,
+  RESERVED_ORCHESTRATOR_ONLY_SKILLS,
+} from '../config/orchestrator-only-skills';
+import { getDefaultNonSpPolicy } from './agent-tier-policy';
 import { CUSTOM_SKILLS } from './custom-skills';
 import {
   buildSuperpowersSkillPermissions,
@@ -58,8 +63,7 @@ export const RECOMMENDED_SKILLS: RecommendedSkill[] = [
  * Skills managed externally (not installed by this plugin's CLI).
  * Entries here only affect agent permission grants — nothing is installed.
  */
-export const PERMISSION_ONLY_SKILLS: PermissionOnlySkill[] = [
-];
+export const PERMISSION_ONLY_SKILLS: PermissionOnlySkill[] = [];
 
 /**
  * Install a skill using `npx skills add`.
@@ -139,11 +143,13 @@ export function getSkillPermissionsForAgent(
         policy === 'allow' && explicit === 'allow' ? 'allow' : 'deny';
     }
 
+    applyReservedSkillOverrides(explicitPermissions, agentName);
     return explicitPermissions;
   }
 
+  const defaultPolicy = getDefaultNonSpPolicy(agentName);
   const permissions: Record<string, 'allow' | 'ask' | 'deny'> = {
-    '*': 'allow',
+    '*': defaultPolicy,
     ...superpowersPermissions,
   };
 
@@ -184,5 +190,18 @@ export function getSkillPermissionsForAgent(
     }
   }
 
+  applyReservedSkillOverrides(permissions, agentName);
   return permissions;
+}
+
+function applyReservedSkillOverrides(
+  permissions: Record<string, 'allow' | 'ask' | 'deny'>,
+  agentName: string,
+): void {
+  const reservedPolicy: 'allow' | 'deny' = isReservedSkillAllowed(agentName)
+    ? 'allow'
+    : 'deny';
+  for (const skill of RESERVED_ORCHESTRATOR_ONLY_SKILLS) {
+    permissions[skill] = reservedPolicy;
+  }
 }

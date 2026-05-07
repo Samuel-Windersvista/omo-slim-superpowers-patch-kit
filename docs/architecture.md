@@ -32,6 +32,17 @@ Within the council/councillor area, `councillor` is an internal-only worker used
 
 Patches mainly constrain Layer 2 worker behavior, prompt bridges connect Layer 2 seats to Layer 3 workflow rules, and config templates pin the Layer 1+2 wiring that makes the stack reproducible.
 
+## Permission Model
+
+The patch-kit governs per-agent permissions across three resource classes via a 3-layer overlay. See the full design spec at `docs/specs/2026-05-05-permission-redesign.md`.
+
+Key invariants:
+
+- Tier-3 read-only agents deny `edit`, `write`, `bash`, and `todowrite`; most also deny `task`, with `council` as the explicit exception because it dispatches `councillor`.
+- Restricted MCPs (`windows-mcp`, `chrome-devtools`, `playwright`) are denied for non-operator agents via `src/config/agent-mcp-blacklist.ts`.
+- Reserved skills (`best-of-n-with-judge`, `update-memory`) are allowed only for `orchestrator` / `orchestrator-beta` via `src/config/orchestrator-only-skills.ts`.
+- Other third-party MCPs are untouched and implicit-allow unless later added to the blacklist.
+
 ## Optional: Best-of-N support (patch 0003 + `opencode-config/`)
 
 The kit's optional best-of-N extension introduces 20 additional sub-agents on top of the base 9 (orchestrator + 8 specialists):

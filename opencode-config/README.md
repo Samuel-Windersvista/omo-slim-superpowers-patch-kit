@@ -96,22 +96,14 @@ entries — no per-variant overrides (which would shallow-replace
 omo-slim's synthesized permissions and lose default `skill`/`question`
 scaffolding).
 
-Superpowers skill policy auto-inheritance: variant suffix names are
-resolved to base agents via `resolveBaseAgentName()` in
-`oh-my-opencode-slim-local/src/cli/superpowers-policy.ts` (introduced
-by patch 0003 in this patch-kit). So `fixer-alpha` automatically
-inherits `fixer`'s allowed superpowers (test-driven-development,
-systematic-debugging, verification-before-completion). Utility agents
-have explicit policy entries (`validator` gets
-verification-before-completion; `scout`/`gist`/`wildcard` get empty
-allowed = no superpowers).
+### Skills
 
-**Non-superpowers skills and non-omo MCPs are preserved**: omo-slim's
-default skill permission is `*: allow` (overlaid only with specific
-superpowers denies), and managed MCP rules touch only
-`websearch_*`/`context7_*`/`grep_app_*` — leaving `chrome-devtools`,
-`playwright`, `windows-mcp`, `best-of-n-with-judge`,
-`inspect-opencode-sessions` untouched.
+- **Superpowers skills**: per-agent allowlist managed by `superpowers-policy.ts`.
+- **OMO custom + recommended skills** (`codemap`, `simplify`, `agent-browser`): per-agent allowlist managed by `custom-skills.ts` / `skills.ts`.
+- **Reserved orchestrator-only skills**: `best-of-n-with-judge`, `update-memory`. Only `orchestrator` and `orchestrator-beta` may invoke these. The list is managed in `orchestrator-only-skills.ts`.
+- **Other skills**: governed by tier policy in `agent-tier-policy.ts`.
+  - Tier 1/2 (`orchestrator*`, `fixer*`, `designer*`, `laborer`) default to `* allow`.
+  - Tier 3 (`oracle*`, `explorer*`, `librarian*`, `observer`, `council`, `councillor`, `scout`, `validator`, `gist`, `wildcard`) default to `* deny`.
 
 ## How variants work without modifying omo-slim's discovery mechanism
 
