@@ -1,11 +1,11 @@
-﻿import { shortModelLabel } from '../utils/session';
+import { shortModelLabel } from '../utils/session';
 import { type AgentDefinition, resolvePrompt } from './orchestrator';
 
 // NOTE: Councillor system prompts live in the councillor agent factory.
-// The format functions below only structure the USER message content 鈥?the
+// The format functions below only structure the USER message content — the
 // agent factory provides the system prompt.
 
-const COUNCIL_AGENT_PROMPT = `You are the Council agent 鈥?a multi-LLM \
+const COUNCIL_AGENT_PROMPT = `You are the Council agent — a multi-LLM \
 orchestration system that runs consensus across multiple models.
 
 **Tool**: You have access to the \`council_session\` tool.
@@ -22,9 +22,9 @@ orchestration system that runs consensus across multiple models.
 4. Follow the Synthesis Process below
 5. Present the result to the user
 
-**Synthesis Process** (MANDATORY 鈥?follow in order):
+**Synthesis Process** (MANDATORY — follow in order):
 1. Read the original user prompt
-2. Review each councillor's response individually 鈥?note each councillor's \
+2. Review each councillor's response individually — note each councillor's \
 key insight and unique contribution by name
 3. Identify agreements and contradictions between councillors
 4. Resolve contradictions with explicit reasoning
@@ -39,7 +39,7 @@ key insight and unique contribution by name
 - Do not omit per-councillor details from the final response
 - Do not collapse the output into only a final summary
 - Be transparent about trade-offs when different approaches have valid pros/cons
-- Don't just average responses 鈥?choose the best approach and improve upon it
+- Don't just average responses — choose the best approach and improve upon it
 
 **Required Output Format**:
 Always include these sections in your final response:
@@ -105,7 +105,7 @@ export function createCouncilAgent(
 /**
  * Build the prompt for a specific councillor session.
  *
- * Returns the raw user prompt 鈥?the agent factory (councillor.ts) provides
+ * Returns the raw user prompt — the agent factory (councillor.ts) provides
  * the system prompt with tool-aware instructions. No duplication.
  *
  * If a per-councillor prompt override is provided, it is prepended as
@@ -150,7 +150,7 @@ export function formatCouncillorResults(
 
   const failedSection = councillorResults
     .filter((cr) => cr.status !== 'completed')
-    .map((cr) => `**${cr.name}**: ${cr.status} 鈥?${cr.error ?? 'Unknown'}`)
+    .map((cr) => `**${cr.name}**: ${cr.status} — ${cr.error ?? 'Unknown'}`)
     .join('\n');
 
   // Defensive guard: caller (runCouncil) short-circuits when all fail,
@@ -159,7 +159,7 @@ export function formatCouncillorResults(
     const errorDetails = councillorResults
       .map(
         (cr) =>
-          `**${cr.name}** (${shortModelLabel(cr.model)}): ${cr.status} 鈥?${
+          `**${cr.name}** (${shortModelLabel(cr.model)}): ${cr.status} — ${
             cr.error ?? 'Unknown'
           }`,
       )

@@ -1,3 +1,16 @@
+﻿diff --git a/src/cli/custom-skills.ts b/src/cli/custom-skills.ts
+index c69f460..36cca9a 100644
+--- a/src/cli/custom-skills.ts
++++ b/src/cli/custom-skills.ts
+@@ -31,7 +31,7 @@ export const CUSTOM_SKILLS: CustomSkill[] = [
+   {
+     name: 'simplify',
+     description: 'Code simplification and readability-focused refactoring',
+-    allowedAgents: ['oracle'],
++    allowedAgents: ['fixer'],
+     sourcePath: 'src/skills/simplify',
+   },
+   {
 diff --git a/src/cli/skills.test.ts b/src/cli/skills.test.ts
 index e1e89aa..7b91f8d 100644
 --- a/src/cli/skills.test.ts

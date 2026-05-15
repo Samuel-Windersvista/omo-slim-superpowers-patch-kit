@@ -1,53 +1,7 @@
-diff --git "a/src\\config\\agent-mcps.ts" "b/src\\config\\agent-mcps.ts"
-index 166f220..fcab12e 100644
---- "a/src\\config\\agent-mcps.ts"
-+++ "b/src\\config\\agent-mcps.ts"
-@@ -46,8 +46,12 @@ export function parseList(items: string[], allAvailable: string[]): string[] {
- /**
-  * Get available MCP names from schema and config.
-  */
-+export function getManagedMcpNames(): string[] {
-+  return McpNameSchema.options;
-+}
-+
- export function getAvailableMcpNames(config?: PluginConfig): string[] {
--  const builtinMcps = McpNameSchema.options;
-+  const builtinMcps = getManagedMcpNames();
-   const disabled = new Set(config?.disabled_mcps ?? []);
-   return builtinMcps.filter((name) => !disabled.has(name));
- }
-@@ -55,6 +59,27 @@ export function getAvailableMcpNames(config?: PluginConfig): string[] {
- /**
-  * Get the MCP list for an agent (from config or defaults).
-  */
-+
-+/**
-+ * Build agent permission rules for managed MCPs only.
-+ */
-+export function buildAgentMcpPermissionRules(
-+  agentMcps: string[],
-+  existingPermissions: Record<string, unknown> = {},
-+): Record<string, 'allow' | 'deny'> {
-+  const rules: Record<string, 'allow' | 'deny'> = {};
-+  const allowedMcps = parseList(agentMcps, getManagedMcpNames());
-+
-+  for (const mcpName of getManagedMcpNames()) {
-+    const sanitizedMcpName = mcpName.replace(/[^a-zA-Z0-9_-]/g, '_');
-+    const permissionKey = `${sanitizedMcpName}_*`;
-+    if (permissionKey in existingPermissions) continue;
-+    rules[permissionKey] = allowedMcps.includes(mcpName) ? 'allow' : 'deny';
-+  }
-+
-+  return rules;
-+}
-+
- export function getAgentMcpList(
-   agentName: string,
-   config?: PluginConfig,
-diff --git "a/src\\config\\agent-mcps.test.ts" "b/src\\config\\agent-mcps.test.ts"
+﻿diff --git a/src/config/agent-mcps.test.ts b/src/config/agent-mcps.test.ts
 index 8e6d5df..3bd44c2 100644
---- "a/src\\config\\agent-mcps.test.ts"
-+++ "b/src\\config\\agent-mcps.test.ts"
+--- a/src/config/agent-mcps.test.ts
++++ b/src/config/agent-mcps.test.ts
 @@ -1,5 +1,10 @@
  import { describe, expect, test } from 'bun:test';
 -import { DEFAULT_AGENT_MCPS, parseList } from './agent-mcps';
@@ -85,3 +39,48 @@ index 8e6d5df..3bd44c2 100644
 +    expect(getManagedMcpNames()).toEqual(['websearch', 'context7', 'grep_app']);
 +  });
  });
+diff --git a/src/config/agent-mcps.ts b/src/config/agent-mcps.ts
+index 166f220..b2f8b86 100644
+--- a/src/config/agent-mcps.ts
++++ b/src/config/agent-mcps.ts
+@@ -43,15 +43,39 @@ export function parseList(items: string[], allAvailable: string[]): string[] {
+   );
+ }
+ 
++export function getManagedMcpNames(): string[] {
++  return McpNameSchema.options;
++}
++
+ /**
+  * Get available MCP names from schema and config.
+  */
+ export function getAvailableMcpNames(config?: PluginConfig): string[] {
+-  const builtinMcps = McpNameSchema.options;
++  const builtinMcps = getManagedMcpNames();
+   const disabled = new Set(config?.disabled_mcps ?? []);
+   return builtinMcps.filter((name) => !disabled.has(name));
+ }
+ 
++/**
++ * Build agent permission rules for managed MCPs only.
++ */
++export function buildAgentMcpPermissionRules(
++  agentMcps: string[],
++  existingPermissions: Record<string, unknown> = {},
++): Record<string, 'allow' | 'deny'> {
++  const rules: Record<string, 'allow' | 'deny'> = {};
++  const allowedMcps = parseList(agentMcps, getManagedMcpNames());
++
++  for (const mcpName of getManagedMcpNames()) {
++    const sanitizedMcpName = mcpName.replace(/[^a-zA-Z0-9_-]/g, '_');
++    const permissionKey = `${sanitizedMcpName}_*`;
++    if (permissionKey in existingPermissions) continue;
++    rules[permissionKey] = allowedMcps.includes(mcpName) ? 'allow' : 'deny';
++  }
++
++  return rules;
++}
++
+ /**
+  * Get the MCP list for an agent (from config or defaults).
+  */

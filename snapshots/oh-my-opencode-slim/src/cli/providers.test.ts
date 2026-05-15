@@ -4,12 +4,18 @@ import { describe, expect, test } from 'bun:test';
 import { generateLiteConfig, MODEL_MAPPINGS } from './providers';
 
 describe('providers', () => {
-  test('MODEL_MAPPINGS has exactly 4 providers', () => {
+  test('MODEL_MAPPINGS includes supported providers', () => {
     const keys = Object.keys(MODEL_MAPPINGS);
-    expect(keys.sort()).toEqual(['copilot', 'kimi', 'openai', 'zai-plan']);
+    expect(keys.sort()).toEqual([
+      'copilot',
+      'kimi',
+      'openai',
+      'opencode-go',
+      'zai-plan',
+    ]);
   });
 
-  test('generateLiteConfig always generates openai preset', () => {
+  test('generateLiteConfig defaults to openai and includes generated presets', () => {
     const config = generateLiteConfig({
       hasTmux: false,
       installSkills: false,
@@ -21,9 +27,14 @@ describe('providers', () => {
       'https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json',
     );
     expect(config.preset).toBe('openai');
+    expect(config.disabled_agents).toBeUndefined();
+    expect((config.presets as any)['opencode-go']).toBeDefined();
+    expect((config.presets as any)['opencode-go'].observer.model).toBe(
+      'opencode-go/kimi-k2.6',
+    );
     const agents = (config.presets as any).openai;
     expect(agents).toBeDefined();
-    expect(agents.orchestrator.model).toBe('openai/gpt-5.4');
+    expect(agents.orchestrator.model).toBe('openai/gpt-5.5');
     expect(agents.orchestrator.variant).toBeUndefined();
     expect(agents.fixer.model).toBe('openai/gpt-5.4-mini');
     expect(agents.fixer.variant).toBe('low');
@@ -41,7 +52,7 @@ describe('providers', () => {
     expect(agents.orchestrator.model).toBe(
       MODEL_MAPPINGS.openai.orchestrator.model,
     );
-    expect(agents.oracle.model).toBe('openai/gpt-5.4');
+    expect(agents.oracle.model).toBe('openai/gpt-5.5');
     expect(agents.oracle.variant).toBe('high');
     expect(agents.librarian.model).toBe('openai/gpt-5.4-mini');
     expect(agents.librarian.variant).toBe('low');
@@ -49,6 +60,69 @@ describe('providers', () => {
     expect(agents.explorer.variant).toBe('low');
     expect(agents.designer.model).toBe('openai/gpt-5.4-mini');
     expect(agents.designer.variant).toBe('medium');
+  });
+
+  test('generateLiteConfig can set opencode-go as active preset', () => {
+    const config = generateLiteConfig({
+      hasTmux: false,
+      installSkills: false,
+      installCustomSkills: false,
+      preset: 'opencode-go',
+      reset: false,
+    });
+
+    expect(config.preset).toBe('opencode-go');
+    expect(config.disabled_agents).toEqual([]);
+    expect((config.presets as any).openai).toBeDefined();
+    const agents = (config.presets as any)['opencode-go'];
+    expect(agents).toBeDefined();
+    expect(agents.orchestrator.model).toBe('opencode-go/glm-5.1');
+    expect(agents.oracle.model).toBe('opencode-go/deepseek-v4-pro');
+    expect(agents.oracle.variant).toBe('max');
+    expect(agents.council.model).toBe('opencode-go/deepseek-v4-pro');
+    expect(agents.council.variant).toBe('high');
+    expect(agents.librarian.model).toBe('opencode-go/minimax-m2.7');
+    expect(agents.explorer.model).toBe('opencode-go/minimax-m2.7');
+    expect(agents.designer.model).toBe('opencode-go/kimi-k2.6');
+    expect(agents.fixer.model).toBe('opencode-go/deepseek-v4-flash');
+    expect(agents.fixer.variant).toBe('high');
+    expect(agents.observer.model).toBe('opencode-go/kimi-k2.6');
+  });
+
+  test('generateLiteConfig rejects unsupported preset', () => {
+    expect(() =>
+      generateLiteConfig({
+        hasTmux: false,
+        installSkills: false,
+        installCustomSkills: false,
+        preset: 'not-real',
+        reset: false,
+      }),
+    ).toThrow('Unsupported preset "not-real"');
+  });
+
+  test('generateLiteConfig rejects non-generated model mappings as active presets', () => {
+    expect(() =>
+      generateLiteConfig({
+        hasTmux: false,
+        installSkills: false,
+        installCustomSkills: false,
+        preset: 'kimi',
+        reset: false,
+      }),
+    ).toThrow('Unsupported preset "kimi"');
+  });
+
+  test('generateLiteConfig rejects inherited property names as presets', () => {
+    expect(() =>
+      generateLiteConfig({
+        hasTmux: false,
+        installSkills: false,
+        installCustomSkills: false,
+        preset: 'toString',
+        reset: false,
+      }),
+    ).toThrow('Unsupported preset "toString"');
   });
 
   test('generateLiteConfig enables tmux when requested', () => {
@@ -76,8 +150,8 @@ describe('providers', () => {
     // Orchestrator should always have '*'
     expect(agents.orchestrator.skills).toEqual(['*']);
 
-    // Oracle should not have bundled simplify
-    expect(agents.oracle.skills).not.toContain('simplify');
+    // Oracle should have bundled simplify
+    expect(agents.oracle.skills).toContain('simplify');
 
     // Orchestrator should implicitly cover bundled codemap via '*'
     expect(agents.orchestrator.skills).toContain('*');
@@ -88,8 +162,8 @@ describe('providers', () => {
     // Explorer should have no bundled skills by default
     expect(agents.explorer.skills).toEqual([]);
 
-    // Fixer should have bundled simplify
-    expect(agents.fixer.skills).toContain('simplify');
+    // Fixer should have no bundled skills by default
+    expect(agents.fixer.skills).toEqual([]);
   });
 
   test('generateLiteConfig includes mcps field', () => {

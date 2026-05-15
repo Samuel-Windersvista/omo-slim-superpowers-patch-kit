@@ -5,7 +5,7 @@
 - OpenCode is already installed.
 - `superpowers` is installed or can be installed.
 - `oh-my-opencode-slim` is available locally or can be cloned locally.
-- Validated basis: `oh-my-opencode-slim v1.1.0` and `superpowers v5.1.0`.
+- Validated basis: `oh-my-opencode-slim v1.1.1` and `superpowers v5.1.0`.
 
 Back up your current `opencode.json` and `oh-my-opencode-slim.jsonc` before merging templates.
 
@@ -14,7 +14,7 @@ Back up your current `opencode.json` and `oh-my-opencode-slim.jsonc` before merg
 Ask your OpenCode agent to:
 
 1. locate or clone a local editable checkout of `oh-my-opencode-slim`
-2. check out upstream tag `v1.1.0`
+2. check out upstream tag `v1.1.1`
 3. apply patch files from `patches/oh-my-opencode-slim/` in numeric order
 4. run `bun install`
 5. run `bun run build`
@@ -29,7 +29,7 @@ Ask your OpenCode agent to:
 ```bash
 git clone https://github.com/alvinunreal/oh-my-opencode-slim.git
 cd oh-my-opencode-slim
-git checkout v1.1.0
+git checkout v1.1.1
 ```
 
 Apply patches in numeric order:
@@ -50,7 +50,7 @@ Patch 0003 is safe even if you do not copy the optional best-of-N example setup;
 Alternatively, apply the combined patch:
 
 ```bash
-git apply /absolute/path/to/omo-slim-superpowers-patch-kit/patches/oh-my-opencode-slim/0000-combined-v1.7.0.patch
+git apply /absolute/path/to/omo-slim-superpowers-patch-kit/patches/oh-my-opencode-slim/0000-combined-v1.1.1.patch
 ```
 
 Install and build:
@@ -60,7 +60,7 @@ bun install
 bun run build
 ```
 
-The v1.1.0 build pipeline is: `clean:dist` (prepended by patch 0007) + `build:plugin` + `build:cli` + `copy:divoom-assets` + `tsc` + `generate-schema`. Patch 0007's `clean:dist` step removes stale deleted artifacts from `dist/` before each build.
+The v1.1.1 build pipeline is: `clean:dist` (prepended by patch 0007) + `build:plugin` + `build:cli` + `copy:divoom-assets` + `tsc` + `generate-schema`. Patch 0007's `clean:dist` step removes stale deleted artifacts from `dist/` before each build.
 
 Then:
 
@@ -70,19 +70,19 @@ Then:
 4. Restart OpenCode.
 5. Follow `docs/verify.md`.
 
-## v1.1.0 upstream notes
+## v1.1.x upstream notes
 
-oh-my-opencode-slim v1.1.0 ships several features that the patches interoperate with (no extra patching needed):
+oh-my-opencode-slim v1.1.x ships several features that the patches interoperate with (no extra patching needed):
 
 - **Divoom integration**: Optional pixel-display status animations during agent activity.
 - **Session goal hooks**: Session-goal tracking hooks for orchestration awareness.
 - **Task session manager**: Child session lifecycle management.
 - **`/preset` command**: Runtime preset switching without editing config files.
 - **TUI state**: Terminal UI state display for agent and model info.
-- **`system-collapse`**: Built-in system prompt collapse — patch 0002 no longer creates this file; v1.1.0 already includes it.
-- **Agent factory files**: v1.1.0 ships its own factory files; patch 0006 adds permission-deny blocks to them rather than replacing them.
+- **`system-collapse`**: Built-in system prompt collapse — patch 0002 no longer creates this file; v1.1.x already includes it.
 
-A combined bump-patch (`0000-combined-v1.7.0.patch`) bundles all seven numbered patches against v1.1.0 for convenience.
+- **Agent factory files**: v1.1.x ships its own factory files; patch 0006 adds permission-deny blocks to them rather than replacing them.
+A combined bump-patch (`0000-combined-v1.1.1.patch`) bundles all seven numbered patches against v1.1.1 for convenience.
 
 ## Important merge rule
 

@@ -32,6 +32,7 @@ import {
   createJsonErrorRecoveryHook,
   createPhaseReminderHook,
   createPostFileToolNudgeHook,
+  createSessionGoalHook,
   createTaskSessionManagerHook,
   createTodoContinuationHook,
   ForegroundFallbackManager,
@@ -61,12 +62,12 @@ import {
   resolveRuntimeAgentName,
 } from './utils';
 import { initLogger, log } from './utils/logger';
+import { SubagentDepthTracker } from './utils/subagent-depth';
+import { collapseSystemInPlace } from './utils/system-collapse';
 import {
   ANTHROPIC_PRIMARY_ORCHESTRATOR,
   isPivotedRootAgent,
 } from './utils/orchestrator-identity';
-import { SubagentDepthTracker } from './utils/subagent-depth';
-import { collapseSystemInPlace } from './utils/system-collapse';
 
 /**
  * Best-effort log to opencode's app logger.
@@ -148,6 +149,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   let jsonErrorRecoveryHook: ReturnType<typeof createJsonErrorRecoveryHook>;
   let foregroundFallback: ForegroundFallbackManager;
   let todoContinuationHook: ReturnType<typeof createTodoContinuationHook>;
+  let sessionGoalHook: ReturnType<typeof createSessionGoalHook>;
   let taskSessionManagerHook: ReturnType<typeof createTaskSessionManagerHook>;
   let interviewManager: ReturnType<typeof createInterviewManager>;
   let presetManager: ReturnType<typeof createPresetManager>;
@@ -324,6 +326,9 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       cooldownMs: config.todoContinuation?.cooldownMs ?? 3000,
       autoEnable: config.todoContinuation?.autoEnable ?? false,
       autoEnableThreshold: config.todoContinuation?.autoEnableThreshold ?? 4,
+    });
+    sessionGoalHook = createSessionGoalHook(ctx, config, {
+      getAgentName: (sessionID) => sessionAgentMap.get(sessionID),
     });
     taskSessionManagerHook = createTaskSessionManagerHook(ctx, {
       maxSessionsPerAgent: config.sessionManager?.maxSessionsPerAgent ?? 2,
@@ -720,6 +725,9 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           agentPermission,
           buildAgentMcpPermissionRules(agentMcps, agentPermission),
         );
+
+        // Update agent config with permissions
+        agentConfigEntry.permission = agentPermission;
       }
 
       // Register /auto-continue command so OpenCode recognizes it.
@@ -740,6 +748,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       }
 
       interviewManager.registerCommand(opencodeConfig);
+      sessionGoalHook.registerCommand(opencodeConfig);
       presetManager.registerCommand(opencodeConfig);
       subtaskCommandManager.registerCommand(opencodeConfig);
     },
@@ -786,23 +795,30 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         }
       }
 
+      // Handle multiplexer pane spawning for OpenCode's Task tool sessions
+      await multiplexerSessionManager.onSessionCreated(event);
+
+      // Handle session status/idle events for pane cleanup early so child panes
+      // close promptly even if later hooks do additional work on idle.
+      await multiplexerSessionManager.onSessionStatus(event);
+
+      // Handle session.deleted events for pane cleanup
+      await multiplexerSessionManager.onSessionDeleted(event);
+
       // Runtime model fallback for foreground agents (rate-limit detection)
       await foregroundFallback.handleEvent(input.event);
 
       // Todo-continuation: auto-continue orchestrator on incomplete todos
       await todoContinuationHook.handleEvent(input);
 
+      sessionGoalHook.handleEvent(
+        input as {
+          event: { type: string; properties?: Record<string, unknown> };
+        },
+      );
+
       // Handle auto-update checking
       await autoUpdateChecker.event(input);
-
-      // Handle multiplexer pane spawning for OpenCode's Task tool sessions
-      await multiplexerSessionManager.onSessionCreated(event);
-
-      // Handle session.status events for pane cleanup
-      await multiplexerSessionManager.onSessionStatus(event);
-
-      // Handle session.deleted events for pane cleanup
-      await multiplexerSessionManager.onSessionDeleted(event);
 
       await interviewManager.handleEvent(
         input as {
@@ -984,6 +1000,15 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         },
         output as { parts: Array<{ type: string; text?: string }> },
       );
+
+      await sessionGoalHook.handleCommandExecuteBefore(
+        input as {
+          command: string;
+          sessionID: string;
+          arguments: string;
+        },
+        output as { parts: Array<{ type: string; text?: string }> },
+      );
     },
 
     'chat.headers': chatHeadersHook['chat.headers'],
@@ -1055,6 +1080,8 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
             (output.system[0] ? `\n\n${output.system[0]}` : '');
         }
       }
+
+      sessionGoalHook.handleSystemTransform(input, output);
 
       // Collapse to single system message for provider compatibility.
       // Some providers (e.g. Qwen via VLLM/DashScope) reject multiple

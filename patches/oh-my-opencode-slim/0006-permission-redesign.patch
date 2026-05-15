@@ -1,43 +1,7 @@
-diff --git a/src/agents/council.ts b/src/agents/council.ts
-index 2b2a8c3..7b1f580 100644
+﻿diff --git a/src/agents/council.ts b/src/agents/council.ts
+index 2b2a8c3..9bcb3d1 100644
 --- a/src/agents/council.ts
 +++ b/src/agents/council.ts
-@@ -1,11 +1,11 @@
--import { shortModelLabel } from '../utils/session';
-+锘縤mport { shortModelLabel } from '../utils/session';
- import { type AgentDefinition, resolvePrompt } from './orchestrator';
- 
- // NOTE: Councillor system prompts live in the councillor agent factory.
--// The format functions below only structure the USER message content 鈥?the
-+// The format functions below only structure the USER message content 閳?the
- // agent factory provides the system prompt.
- 
--const COUNCIL_AGENT_PROMPT = `You are the Council agent 鈥?a multi-LLM \
-+const COUNCIL_AGENT_PROMPT = `You are the Council agent 閳?a multi-LLM \
- orchestration system that runs consensus across multiple models.
- 
- **Tool**: You have access to the \`council_session\` tool.
-@@ -22,9 +22,9 @@ orchestration system that runs consensus across multiple models.
- 4. Follow the Synthesis Process below
- 5. Present the result to the user
- 
--**Synthesis Process** (MANDATORY 鈥?follow in order):
-+**Synthesis Process** (MANDATORY 閳?follow in order):
- 1. Read the original user prompt
--2. Review each councillor's response individually 鈥?note each councillor's \
-+2. Review each councillor's response individually 閳?note each councillor's \
- key insight and unique contribution by name
- 3. Identify agreements and contradictions between councillors
- 4. Resolve contradictions with explicit reasoning
-@@ -39,7 +39,7 @@ key insight and unique contribution by name
- - Do not omit per-councillor details from the final response
- - Do not collapse the output into only a final summary
- - Be transparent about trade-offs when different approaches have valid pros/cons
--- Don't just average responses 鈥?choose the best approach and improve upon it
-+- Don't just average responses 閳?choose the best approach and improve upon it
- 
- **Required Output Format**:
- Always include these sections in your final response:
 @@ -84,6 +84,12 @@ export function createCouncilAgent(
      config: {
        temperature: 0.1,
@@ -51,85 +15,10 @@ index 2b2a8c3..7b1f580 100644
      },
    };
  
-@@ -99,7 +105,7 @@ export function createCouncilAgent(
- /**
-  * Build the prompt for a specific councillor session.
-  *
-- * Returns the raw user prompt 鈥?the agent factory (councillor.ts) provides
-+ * Returns the raw user prompt 閳?the agent factory (councillor.ts) provides
-  * the system prompt with tool-aware instructions. No duplication.
-  *
-  * If a per-councillor prompt override is provided, it is prepended as
-@@ -144,7 +150,7 @@ export function formatCouncillorResults(
- 
-   const failedSection = councillorResults
-     .filter((cr) => cr.status !== 'completed')
--    .map((cr) => `**${cr.name}**: ${cr.status} 鈥?${cr.error ?? 'Unknown'}`)
-+    .map((cr) => `**${cr.name}**: ${cr.status} 閳?${cr.error ?? 'Unknown'}`)
-     .join('\n');
- 
-   // Defensive guard: caller (runCouncil) short-circuits when all fail,
-@@ -153,7 +159,7 @@ export function formatCouncillorResults(
-     const errorDetails = councillorResults
-       .map(
-         (cr) =>
--          `**${cr.name}** (${shortModelLabel(cr.model)}): ${cr.status} 鈥?${
-+          `**${cr.name}** (${shortModelLabel(cr.model)}): ${cr.status} 閳?${
-             cr.error ?? 'Unknown'
-           }`,
-       )
 diff --git a/src/agents/designer.ts b/src/agents/designer.ts
-index 9615617..47a4ac5 100644
+index 9615617..2a68778 100644
 --- a/src/agents/designer.ts
 +++ b/src/agents/designer.ts
-@@ -1,4 +1,4 @@
--import type { AgentDefinition } from './orchestrator';
-+锘縤mport type { AgentDefinition } from './orchestrator';
- 
- const DESIGNER_PROMPT = `You are a Designer - a frontend UI/UX specialist who creates and reviews intentional, polished experiences.
- 
-@@ -8,7 +8,7 @@ const DESIGNER_PROMPT = `You are a Designer - a frontend UI/UX specialist who cr
- 
- **Typography**
- - Choose distinctive, characterful fonts that elevate aesthetics
--- Avoid generic defaults (Arial, Inter)鈥攐pt for unexpected, beautiful choices
-+- Avoid generic defaults (Arial, Inter)閳ユ攼pt for unexpected, beautiful choices
- - Pair display fonts with refined body fonts for hierarchy
- 
- **Color & Theme**
-@@ -25,7 +25,7 @@ const DESIGNER_PROMPT = `You are a Designer - a frontend UI/UX specialist who cr
- 
- **Spatial Composition**
- - Break conventions: asymmetry, overlap, diagonal flow, grid-breaking
--- Generous negative space OR controlled density鈥攃ommit to the choice
-+- Generous negative space OR controlled density閳ユ攦ommit to the choice
- - Unexpected layouts that guide the eye
- 
- **Visual Depth**
-@@ -34,19 +34,19 @@ const DESIGNER_PROMPT = `You are a Designer - a frontend UI/UX specialist who cr
- - Contextual effects that match the aesthetic (grain overlays, custom cursors)
- 
- **Styling Approach**
--- Default to Tailwind CSS utility classes when available鈥攆ast, maintainable, consistent
-+- Default to Tailwind CSS utility classes when available閳ユ攩ast, maintainable, consistent
- - Use custom CSS when the vision requires it: complex animations, unique effects, advanced compositions
- - Balance utility-first speed with creative freedom where it matters
- 
- **Match Vision to Execution**
--- Maximalist designs 鈫?elaborate implementation, extensive animations, rich effects
--- Minimalist designs 鈫?restraint, precision, careful spacing and typography
-+- Maximalist designs 閳?elaborate implementation, extensive animations, rich effects
-+- Minimalist designs 閳?restraint, precision, careful spacing and typography
- - Elegance comes from executing the chosen vision fully, not halfway
- 
- ## Constraints
- - Respect existing design systems when present
- - Leverage component libraries where available
--- Prioritize visual excellence鈥攃ode perfection comes second
-+- Prioritize visual excellence閳ユ攦ode perfection comes second
- 
- ## Review Responsibilities
- - Review existing UI for usability, responsiveness, visual consistency, and polish when asked
 @@ -77,6 +77,9 @@ export function createDesignerAgent(
        model,
        temperature: 0.7,
@@ -141,15 +30,9 @@ index 9615617..47a4ac5 100644
    };
  }
 diff --git a/src/agents/explorer.ts b/src/agents/explorer.ts
-index eda787b..fbd80fa 100644
+index eda787b..697143e 100644
 --- a/src/agents/explorer.ts
 +++ b/src/agents/explorer.ts
-@@ -1,4 +1,4 @@
--import type { AgentDefinition } from './orchestrator';
-+锘縤mport type { AgentDefinition } from './orchestrator';
- 
- const EXPLORER_PROMPT = `You are Explorer - a fast codebase navigation specialist.
- 
 @@ -51,6 +51,13 @@ export function createExplorerAgent(
        model,
        temperature: 0.1,
@@ -165,24 +48,9 @@ index eda787b..fbd80fa 100644
    };
  }
 diff --git a/src/agents/fixer.ts b/src/agents/fixer.ts
-index 35bc21a..84aef07 100644
+index 35bc21a..7e251f1 100644
 --- a/src/agents/fixer.ts
 +++ b/src/agents/fixer.ts
-@@ -1,4 +1,4 @@
--import type { AgentDefinition } from './orchestrator';
-+锘縤mport type { AgentDefinition } from './orchestrator';
- 
- const FIXER_PROMPT = `You are Fixer - a fast, focused implementation specialist.
- 
-@@ -17,7 +17,7 @@ const FIXER_PROMPT = `You are Fixer - a fast, focused implementation specialist.
- - NO external research (no websearch, context7, grep_app)
- - NO delegation or spawning subagents
- - No multi-step research/planning; minimal execution sequence ok
--- If context is insufficient: use grep/glob/read directly 鈥?do not delegate
-+- If context is insufficient: use grep/glob/read directly 閳?do not delegate
- - Only ask for missing inputs you truly cannot retrieve yourself
- - Do not act as the primary reviewer; implement requested changes and surface obvious issues briefly
- 
 @@ -64,6 +64,9 @@ export function createFixerAgent(
        model,
        temperature: 0.2,
@@ -194,15 +62,9 @@ index 35bc21a..84aef07 100644
    };
  }
 diff --git a/src/agents/librarian.ts b/src/agents/librarian.ts
-index b3daf1d..6340532 100644
+index b3daf1d..5e3b6bd 100644
 --- a/src/agents/librarian.ts
 +++ b/src/agents/librarian.ts
-@@ -1,4 +1,4 @@
--import type { AgentDefinition } from './orchestrator';
-+锘縤mport type { AgentDefinition } from './orchestrator';
- 
- const LIBRARIAN_PROMPT = `You are Librarian - a research specialist for codebases and documentation.
- 
 @@ -43,6 +43,13 @@ export function createLibrarianAgent(
        model,
        temperature: 0.1,
@@ -218,43 +80,10 @@ index b3daf1d..6340532 100644
    };
  }
 diff --git a/src/agents/observer.ts b/src/agents/observer.ts
-index 56c26d7..2574ca3 100644
+index 56c26d7..31ac428 100644
 --- a/src/agents/observer.ts
 +++ b/src/agents/observer.ts
-@@ -1,20 +1,20 @@
--import type { AgentDefinition } from './orchestrator';
-+锘縤mport type { AgentDefinition } from './orchestrator';
- 
--const OBSERVER_PROMPT = `You are Observer 鈥?a visual analysis specialist.
-+const OBSERVER_PROMPT = `You are Observer 閳?a visual analysis specialist.
- 
- **Role**: Interpret images, screenshots, PDFs, and diagrams. Extract structured observations for the Orchestrator to act on.
- 
- **Behavior**:
- - Read the file(s) specified in the prompt
--- Analyze visual content 鈥?layouts, UI elements, text, relationships, flows
--- For screenshots with text/code/errors: extract the **exact text** via OCR 鈥?never paraphrase error messages or code
-+- Analyze visual content 閳?layouts, UI elements, text, relationships, flows
-+- For screenshots with text/code/errors: extract the **exact text** via OCR 閳?never paraphrase error messages or code
- - For multiple files: analyze each, then compare or relate as requested
- - Return ONLY the extracted information relevant to the goal
--- If the image is unclear, blurry, or partially visible: state what you CAN see and explicitly note what is uncertain 鈥?never guess or fabricate details
-+- If the image is unclear, blurry, or partially visible: state what you CAN see and explicitly note what is uncertain 閳?never guess or fabricate details
- 
- **Constraints**:
- - READ-ONLY: Analyze and report, don't modify files
--- Save context tokens 鈥?the Orchestrator never processes the raw file
-+- Save context tokens 閳?the Orchestrator never processes the raw file
- - Match the language of the request
- - If info not found, state clearly what's missing
- `;
-@@ -35,11 +35,18 @@ export function createObserverAgent(
-   return {
-     name: 'observer',
-     description:
--      'Visual analysis. Use for interpreting images, screenshots, PDFs, and diagrams 鈥?extracts structured observations without loading raw files into main context. Requires a vision-capable model.',
-+      'Visual analysis. Use for interpreting images, screenshots, PDFs, and diagrams 閳?extracts structured observations without loading raw files into main context. Requires a vision-capable model.',
-     config: {
+@@ -40,6 +40,13 @@ export function createObserverAgent(
        model,
        temperature: 0.1,
        prompt,
@@ -269,15 +98,9 @@ index 56c26d7..2574ca3 100644
    };
  }
 diff --git a/src/agents/oracle.ts b/src/agents/oracle.ts
-index 792904d..c4fdf44 100644
+index 792904d..dd3d5a2 100644
 --- a/src/agents/oracle.ts
 +++ b/src/agents/oracle.ts
-@@ -1,4 +1,4 @@
--import type { AgentDefinition } from './orchestrator';
-+锘縤mport type { AgentDefinition } from './orchestrator';
- 
- const ORACLE_PROMPT = `You are Oracle - a strategic technical advisor and code reviewer.
- 
 @@ -45,6 +45,13 @@ export function createOracleAgent(
        model,
        temperature: 0.1,
@@ -422,7 +245,7 @@ index 0000000..aeb9ac0
 +}
 diff --git a/src/config/agent-mcp-blacklist.test.ts b/src/config/agent-mcp-blacklist.test.ts
 new file mode 100644
-index 0000000..7720619
+index 0000000..b98ad9d
 --- /dev/null
 +++ b/src/config/agent-mcp-blacklist.test.ts
 @@ -0,0 +1,66 @@
@@ -492,10 +315,9 @@ index 0000000..7720619
 +    );
 +  });
 +});
-\ No newline at end of file
 diff --git a/src/config/agent-mcp-blacklist.ts b/src/config/agent-mcp-blacklist.ts
 new file mode 100644
-index 0000000..fe04bf0
+index 0000000..d28f80c
 --- /dev/null
 +++ b/src/config/agent-mcp-blacklist.ts
 @@ -0,0 +1,37 @@
@@ -536,7 +358,6 @@ index 0000000..fe04bf0
 +  }
 +  return denies;
 +}
-\ No newline at end of file
 diff --git a/src/config/orchestrator-only-skills.test.ts b/src/config/orchestrator-only-skills.test.ts
 new file mode 100644
 index 0000000..069b53a

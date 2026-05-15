@@ -411,6 +411,7 @@ describe('ForegroundFallbackManager chain exhaustion', () => {
 
     // Session B (fresh session, different ID): only model-y is in chain and it IS
     // the current model → tried gets model-y → chain.find() = undefined → exhausted
+    // No agent field to avoid pivot-orchestrator path.
     const { client: client2, mocks: mocks2 } = createMockClient();
     const mgr2 = new ForegroundFallbackManager(
       client2,
@@ -422,7 +423,6 @@ describe('ForegroundFallbackManager chain exhaustion', () => {
       properties: {
         info: {
           sessionID: 'sess-exhaust-2',
-          agent: 'orchestrator',
           providerID: 'openai',
           modelID: 'model-y',
           error: { message: 'rate limit exceeded' },
@@ -477,21 +477,23 @@ describe('ForegroundFallbackManager deduplication', () => {
 // ForegroundFallbackManager — subagent.session.created
 // ---------------------------------------------------------------------------
 
-describe('ForegroundFallbackManager subagent.session.created', () => {
-  test('records agent name from subagent.session.created when agentName provided', async () => {
+describe('ForegroundFallbackManager agent-driven chain selection', () => {
+  test('uses explorer chain from message.updated agent field', async () => {
     const { client, mocks } = createMockClient();
     const mgr = new ForegroundFallbackManager(client, makeChains(), true);
 
-    // Register the session as 'explorer' via subagent creation event
+    // Send a message.updated with agent='explorer' — triggers fallback directly
     await mgr.handleEvent({
-      type: 'subagent.session.created',
-      properties: { sessionID: 'sub-1', agentName: 'explorer' },
-    });
-
-    // Now trigger rate limit — should use explorer's chain
-    await mgr.handleEvent({
-      type: 'session.error',
-      properties: { sessionID: 'sub-1', error: { message: 'rate limit' } },
+      type: 'message.updated',
+      properties: {
+        info: {
+          sessionID: 'sub-1',
+          agent: 'explorer',
+          providerID: 'openai',
+          modelID: 'gpt-4o-mini',
+          error: { message: 'rate limit' },
+        },
+      },
     });
 
     expect(mocks.promptAsync).toHaveBeenCalledTimes(1);
@@ -501,9 +503,10 @@ describe('ForegroundFallbackManager subagent.session.created', () => {
       },
     ];
     // explorer chain: ['openai/gpt-4o-mini', 'anthropic/claude-haiku']
-    // no current model tracked → first untried = openai/gpt-4o-mini
-    expect(call[0].body.model.providerID).toBe('openai');
-    expect(call[0].body.model.modelID).toBe('gpt-4o-mini');
+    // message.updated tracks openai/gpt-4o-mini as current → added to tried
+    // → next untried = anthropic/claude-haiku
+    expect(call[0].body.model.providerID).toBe('anthropic');
+    expect(call[0].body.model.modelID).toBe('claude-haiku');
   });
 });
 

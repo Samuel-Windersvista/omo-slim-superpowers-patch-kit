@@ -1,5 +1,25 @@
 # 变更日志
 
+## 2026-05-15 — v1.8.0
+
+### 变更
+- 补丁基准版本升级至 `oh-my-opencode-slim v1.1.1`。
+- 全部 7 个补丁针对 v1.1.1 上游源码重新生成。
+- snapshots 更新为 v1.1.1 打补丁后的完整状态。
+- 合并补丁重命名为 `0000-combined-v1.1.1.patch`。
+- 补丁文件统一为 UTF-8 without BOM 编码，路径改为相对路径。
+- README / install.md / COMPATIBILITY.md / UPSTREAM.md 版本号同步更新。
+
+### 修复
+- README 技能/代理混淆修正。
+- 5 个 base prompt 文件中移除与 bridge append 重复的段落。
+- 2 个快照测试断言更新为匹配补丁后策略。
+- install.md 标注补丁 0003 为可选。
+- verify.md 补充探测命令预期结果标注。
+- UPSTREAM.md / COMPATIBILITY.md 新增 superpowers 上游信息。
+- rollback.md 补充恢复配置的具体 JSON 字段。
+- explorer-alpha/beta agent 描述修正。
+
 ## 2026-05-15 — v1.7.0
 
 ### 变更

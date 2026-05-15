@@ -5,7 +5,7 @@
 This patch kit is currently validated against:
 
 - `superpowers v5.1.0`
-- `oh-my-opencode-slim v1.1.0`
+- `oh-my-opencode-slim v1.1.1`
 
 ## Expectations for nearby versions
 

@@ -33,50 +33,51 @@ type OpencodeClient = PluginInput['client'];
 type SessionAgentChangeHandler = (sessionID: string, agentName: string) => void;
 
 // ---------------------------------------------------------------------------
-// Retryable-failure detection (behavior-based, no message regex)
+// Rate-limit detection
 // ---------------------------------------------------------------------------
 
-type RetryableApiError = {
-  name?: string;
-  data?: {
-    isRetryable?: boolean;
-    responseHeaders?: Record<string, string>;
-    statusCode?: number;
-    message?: string;
-    responseBody?: string;
-  };
-  error?: unknown;
-};
-
-/**
- * Normalize plugin-visible errors.
- *
- * OpenCode exposes structured API errors on assistant messages and
- * session.error events. Some layers wrap the real payload as
- * `{ error: ApiError }`, so unwrap recursively.
- */
-function unwrapApiError(error: unknown): RetryableApiError | null {
-  if (!error || typeof error !== "object") return null;
-  const err = error as RetryableApiError;
-  if (err.data || err.name) return err;
-  if (err.error) return unwrapApiError(err.error);
-  return err;
-}
+const RATE_LIMIT_PATTERNS = [
+  /\b429\b/,
+  /rate.?limit/i,
+  /too many requests/i,
+  /quota.?exceeded/i,
+  /usage.?exceeded/i,
+  /ExceededBudget/i,
+  /over.?budget/i,
+  /usage limit/i,
+  /overloaded/i,
+  /resource.?exhausted/i,
+  /insufficient.?quota/i,
+  /high concurrency/i,
+  /reduce concurrency/i,
+];
 
 export function isRateLimitError(error: unknown): boolean {
-  const err = unwrapApiError(error);
-  if (!err?.data) return false;
-  return err.data.isRetryable === true || err.data.statusCode === 429;
+  if (!error || typeof error !== 'object') return false;
+  const err = error as {
+    message?: string;
+    data?: { statusCode?: number; message?: string; responseBody?: string };
+  };
+  const text = [
+    err.message ?? '',
+    String(err.data?.statusCode ?? ''),
+    err.data?.message ?? '',
+    err.data?.responseBody ?? '',
+  ].join(' ');
+  return RATE_LIMIT_PATTERNS.some((p) => p.test(text));
 }
 
 /**
  * Extract response headers from a structured API error.
- * Lives at error.data.responseHeaders per @opencode-ai/sdk's ApiError type.
+ * OpenCode exposes structured API errors on assistant messages and
+ * session.error events with headers at error.data.responseHeaders.
  */
 function extractResponseHeaders(
   error: unknown,
 ): Record<string, string> | undefined {
-  const headers = unwrapApiError(error)?.data?.responseHeaders;
+  if (!error || typeof error !== 'object') return undefined;
+  const err = error as { data?: { responseHeaders?: Record<string, string> } };
+  const headers = err.data?.responseHeaders;
   if (!headers || typeof headers !== 'object') return undefined;
   return headers as Record<string, string>;
 }
@@ -128,8 +129,8 @@ export class ForegroundFallbackManager {
     /**
      * Ordered fallback chains per agent.
      * e.g. { orchestrator: ['anthropic/claude-opus-4-5', 'openai/gpt-4o'] }
-      * The first model that hasn't been tried yet is selected on each fallback.
-      */
+     * The first model that hasn't been tried yet is selected on each fallback.
+     */
     private readonly chains: Record<string, string[]>,
     private readonly enabled: boolean,
     cooldowns?: CooldownStore,
@@ -231,7 +232,19 @@ export class ForegroundFallbackManager {
             }
           | undefined;
         if (!props?.sessionID || props.status?.type !== 'retry') break;
-        await this.tryFallback(props.sessionID);
+        const msg = props.status.message?.toLowerCase() ?? '';
+        if (
+          msg.includes('rate limit') ||
+          msg.includes('usage limit') ||
+          msg.includes('usage exceeded') ||
+          msg.includes('quota exceeded') ||
+          msg.includes('exceededbudget') ||
+          msg.includes('over budget') ||
+          msg.includes('high concurrency') ||
+          msg.includes('reduce concurrency')
+        ) {
+          await this.tryFallback(props.sessionID);
+        }
         break;
       }
 
@@ -288,7 +301,7 @@ export class ForegroundFallbackManager {
 
   /**
    * Return true if a fallback trigger on this session should perform the
-   * one-shot orchestrator → orchestrator-beta pivot rather than the
+   * one-shot orchestrator -> orchestrator-beta pivot rather than the
    * generic chain-walk.
    */
   private shouldPivotOrchestrator(sessionID: string): boolean {

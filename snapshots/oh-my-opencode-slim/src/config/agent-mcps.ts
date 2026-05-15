@@ -43,22 +43,18 @@ export function parseList(items: string[], allAvailable: string[]): string[] {
   );
 }
 
-/**
- * Get available MCP names from schema and config.
- */
 export function getManagedMcpNames(): string[] {
   return McpNameSchema.options;
 }
 
+/**
+ * Get available MCP names from schema and config.
+ */
 export function getAvailableMcpNames(config?: PluginConfig): string[] {
   const builtinMcps = getManagedMcpNames();
   const disabled = new Set(config?.disabled_mcps ?? []);
   return builtinMcps.filter((name) => !disabled.has(name));
 }
-
-/**
- * Get the MCP list for an agent (from config or defaults).
- */
 
 /**
  * Build agent permission rules for managed MCPs only.
@@ -80,6 +76,9 @@ export function buildAgentMcpPermissionRules(
   return rules;
 }
 
+/**
+ * Get the MCP list for an agent (from config or defaults).
+ */
 export function getAgentMcpList(
   agentName: string,
   config?: PluginConfig,

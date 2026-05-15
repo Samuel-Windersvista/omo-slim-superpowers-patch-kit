@@ -518,7 +518,7 @@ export function getAgentConfigs(
       sdkConfig.displayName = a.displayName;
     }
 
-     applyClassification(a.name, sdkConfig);
+    applyClassification(a.name, sdkConfig);
 
       // Apply closed-set restricted MCP blacklist.
       // Non-operator agents receive explicit deny rules for windows-mcp,
@@ -555,7 +555,7 @@ export function getAgentConfigs(
       if (shadow) {
         entries.push(shadow);
       }
-    }
+  }
 
   return Object.fromEntries(entries);
 }

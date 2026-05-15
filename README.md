@@ -24,7 +24,7 @@
 已通过以下版本验证：
 
 - `superpowers v5.1.0`
-- `oh-my-opencode-slim v1.1.0`
+- `oh-my-opencode-slim v1.1.1`
 
 ## 本工具包补丁的内容
 

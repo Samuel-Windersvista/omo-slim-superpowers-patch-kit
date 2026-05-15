@@ -260,22 +260,22 @@ describe('skill permissions', () => {
     expect(skillPerm?.clonedeps).not.toBe('allow');
   });
 
-  test('oracle does not get requesting-code-review skill (gated to orchestrator only)', () => {
+  test('oracle gets requesting-code-review skill allowed by default', () => {
     const agents = createAgents();
     const oracle = agents.find((a) => a.name === 'oracle');
     expect(oracle).toBeDefined();
     const skillPerm = (oracle?.config.permission as Record<string, unknown>)
       ?.skill as Record<string, string>;
-    expect(skillPerm?.['requesting-code-review']).not.toBe('allow');
+    expect(skillPerm?.['requesting-code-review']).toBe('allow');
   });
 
-  test('oracle does not get simplify skill (gated to fixer only)', () => {
+  test('oracle gets simplify skill allowed by default', () => {
     const agents = createAgents();
     const oracle = agents.find((a) => a.name === 'oracle');
     expect(oracle).toBeDefined();
     const skillPerm = (oracle?.config.permission as Record<string, unknown>)
       ?.skill as Record<string, string>;
-    expect(skillPerm?.simplify).not.toBe('allow');
+    expect(skillPerm?.simplify).toBe('allow');
   });
 });
 
